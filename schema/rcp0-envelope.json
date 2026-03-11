@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/danielrusso-org/rcp-protocol/schema/rcp0-envelope.json",
+  "title": "RCP-0 Relational Provenance Envelope",
+  "description": "Normative schema for the RCP-0 envelope. Attach to any dataset or model at ingestion to record relational accountability, community authority, and revocation rights. Part of the Relational Consent and Provenance (RCP) protocol.",
+  "type": "object",
+  "required": [
+    "rcp_version",
+    "envelope_id",
+    "dataset_id",
+    "custodial_authority",
+    "authorized_purposes",
+    "consent_record_id",
+    "consent_granted_at",
+    "revocation_authority",
+    "revocation_status",
+    "revocation_status_updated_at"
+  ],
+  "properties": {
+    "rcp_version": {
+      "type": "string",
+      "description": "RCP protocol version this envelope conforms to.",
+      "example": "0.1"
+    },
+    "envelope_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique identifier for this envelope instance."
+    },
+    "dataset_id": {
+      "type": "string",
+      "description": "Identifier of the governed dataset, model, or data product."
+    },
+    "custodial_authority": {
+      "$ref": "#/$defs/authority",
+      "description": "The community or entity that holds governance authority over this dataset. May be collective (e.g., iwi, hapu, tribal council)."
+    },
+    "authorized_purposes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Bounded list of permitted uses. Systems MUST NOT use data for purposes not in this list.",
+      "examples": [
+        ["health-research", "non-commercial", "iwi-internal"],
+        ["educational", "anonymised-aggregate-only"]
+      ]
+    },
+    "relational_obligations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional obligation keys from the RCP obligation codebook. Encode cultural, ethical, or relational constraints that travel with the data.",
+      "examples": [
+        ["tapu", "genealogical", "commercial-prohibited", "return-to-community"]
+      ]
+    },
+    "consent_record_id": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI pointing to the authoritative consent record that authorised this envelope."
+    },
+    "consent_granted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when authority was granted."
+    },
+    "revocation_authority": {
+      "$ref": "#/$defs/authority",
+      "description": "Who holds the right to revoke authority. May differ from custodial_authority (e.g., a sub-group or designated trustee)."
+    },
+    "revocation_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional resolvable endpoint for real-time revocation status checks and REVOKE message submission."
+    },
+    "revocation_status": {
+      "type": "string",
+      "enum": ["provisional", "active", "amended", "revoked", "disputed"],
+      "description": "Current status of the authority grant. Systems MUST treat 'revoked' and 'disputed' as equivalent for access control purposes."
+    },
+    "revocation_status_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of the most recent status transition."
+    },
+    "derived_from": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "description": "envelope_ids of parent datasets from which this dataset is derived. Enables whakapapa-style relational lineage chains. Derived envelopes inherit revocation from parents."
+    },
+    "conditions": {
+      "type": "string",
+      "description": "Free-text or structured conditions on use, such as temporal limits, geographic constraints, or community approval requirements."
+    }
+  },
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uri",
+          "description": "Stable, resolvable URI identifying the authority holder. Should resolve to a registry entry, ORCID, ROR, or community identifier."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the authority holder."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["individual", "collective", "institution"],
+          "description": "Type of authority holder. 'collective' is a first-class value, not an edge case: hapu, iwi, tribal councils, and community boards are valid authority holders."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Optional contact URI or email for the authority holder."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "rcp_version": "0.1",
+      "envelope_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "dataset_id": "maori-health-survey-2024",
+      "custodial_authority": {
+        "id": "https://www.tewaka.maori.nz",
+        "name": "Te Waka",
+        "type": "collective"
+      },
+      "authorized_purposes": ["iwi-health-research", "non-commercial", "anonymised-aggregate-only"],
+      "relational_obligations": ["return-to-community", "tapu"],
+      "consent_record_id": "https://www.tewaka.maori.nz/consent/2024-001",
+      "consent_granted_at": "2024-03-01T09:00:00Z",
+      "revocation_authority": {
+        "id": "https://www.tewaka.maori.nz/governance",
+        "name": "Te Waka Governance Board",
+        "type": "collective"
+      },
+      "revocation_endpoint": "https://www.tewaka.maori.nz/rcp/revocation",
+      "revocation_status": "active",
+      "revocation_status_updated_at": "2024-03-01T09:00:00Z",
+      "derived_from": [],
+      "conditions": "Data may not be used in commercial AI training. Results must be returned to the community within 12 months of publication."
+    }
+  ]
+}
